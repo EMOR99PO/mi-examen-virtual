@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Examen Virtual 24/7</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; background-color: #f4f4f9; color: #333; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .question { font-weight: bold; margin-bottom: 10px; }
+        .options label { display: block; margin: 8px 0; cursor: pointer; }
+        input[type="text"] { width: 100%; padding: 8px; margin: 8px 0 15px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background-color: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 100%; }
+        button:hover { background-color: #0056b3; }
+        .correct { color: #28a745; font-weight: bold; }
+        .incorrect { color: #dc3545; font-weight: bold; }
+        #feedback { font-size: 18px; font-weight: bold; text-align: center; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>Registro del Alumno</h2>
+        <label for="nombre">Nombre Completo:</label>
+        <input type="text" id="nombre" required placeholder="Ej. Juan Pérez">
+        
+        <label for="cuenta">Número de Cuenta / Matrícula:</label>
+        <input type="text" id="cuenta" required placeholder="Ej. 12345678">
+    </div>
+
+    <form id="quizForm">
+        <!-- Pregunta 1 -->
+        <div class="card" id="p1_container">
+            <div class="question">1. ¿Cuál es el planeta más grande del sistema solar?</div>
+            <div class="options">
+                <label><input type="radio" name="p1" value="A"> A) Tierra</label>
+                <label><input type="radio" name="p1" value="B"> B) Júpiter</label>
+                <label><input type="radio" name="p1" value="C"> C) Marte</label>
+            </div>
+            <div id="res_p1"></div>
+        </div>
+
+        <!-- Pregunta 2 -->
+        <div class="card" id="p2_container">
+            <div class="question">2. ¿Cuánto es 8 x 7?</div>
+            <div class="options">
+                <label><input type="radio" name="p2" value="A"> A) 54</label>
+                <label><input type="radio" name="p2" value="B"> B) 56</label>
+                <label><input type="radio" name="p2" value="C"> C) 64</label>
+            </div>
+            <div id="res_p2"></div>
+        </div>
+
+        <button type="button" onclick="calificarExamen()">Enviar Examen</button>
+    </form>
+
+    <div id="feedback" class="card" style="display:none;"></div>
+
+    <!-- CONFIGURACIÓN DE GOOGLE FORMS (OCULTO) -->
+    <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
+    <form id="googleSheetForm" action="AQUÍ_VA_TU_URL_DE_GOOGLE_FORMS" method="POST" target="hidden_iframe" style="display:none;">
+        <input type="text" name="entry.AQUÍ_ID_NOMBRE" id="form_nombre">
+        <input type="text" name="entry.AQUÍ_ID_CUENTA" id="form_cuenta">
+        <input type="text" name="entry.AQUÍ_ID_NOTA" id="form_nota">
+    </form>
+
+    <script>
+        // Define las respuestas correctas aquí
+        const respuestasCorrectas = {
+            p1: "B",
+            p2: "B"
+        };
+
+        function calificarExamen() {
+            const nombre = document.getElementById('nombre').value.trim();
+            const cuenta = document.getElementById('cuenta').value.trim();
+
+            if (!nombre || !cuenta) {
+                alert("Por favor, introduce tu nombre y número de cuenta antes de enviar.");
+                return;
+            }
+
+            let aciertos = 0;
+            let totalPreguntas = Object.keys(respuestasCorrectas).length;
+
+            // Validar respuestas
+            for (let pregunta in respuestasCorrectas) {
+                const seleccionada = document.querySelector(`input[name="${pregunta}"]:checked`);
+                const divResultado = document.getElementById(`res_${pregunta}`);
+                
+                if (seleccionada && seleccionada.value === respuestasCorrectas[pregunta]) {
+                    aciertos++;
+                    divResultado.innerHTML = "<p class='correct'>✓ ¡Correcto!</p>";
+                } else {
+                    divResultado.innerHTML = `<p class='incorrect'>✗ Incorrecto. La respuesta correcta era la ${respuestasCorrectas[pregunta]}</p>`;
+                }
+            }
+
+            // Calcular calificación
+            let notaFinal = ((aciertos / totalPreguntas) * 10).toFixed(1); // Escala de 0 a 10
+            let mensaje = `<h3>Resultado: ${aciertos} de ${totalPreguntas} aciertos (Calificación: ${notaFinal})</h3>`;
+
+            // Mensajes motivacionales personalizados
+            if (aciertos >= (totalPreguntas / 2)) {
+                mensaje += "<p class='correct'>¡Muchas felicidades! Has aprobado el examen con éxito. Sigue así. 🌟</p>";
+            } else {
+                mensaje += "<p class='incorrect'>No te preocupes, el aprendizaje es un proceso. ¡Repasa los temas y vuelve a intentarlo! 💪</p>";
+            }
+
+            // Mostrar retroalimentación al alumno
+            const feedbackDiv = document.getElementById('feedback');
+            feedbackDiv.innerHTML = mensaje;
+            feedbackDiv.style.display = 'block';
+
+            // Desactivar el botón para evitar doble envío
+            document.querySelector("button").disabled = true;
+
+            // ENVIAR A GOOGLE SHEETS
+            document.getElementById('form_nombre').value = nombre;
+            document.getElementById('form_cuenta').value = cuenta;
+            document.getElementById('form_nota').value = notaFinal;
+            document.getElementById('googleSheetForm').submit();
+        }
+    </script>
+</body>
+</html>
